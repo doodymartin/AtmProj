@@ -11,7 +11,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
+
 import org.springframework.stereotype.Service;
+
 import com.jjProj.atmEngine.common.AtmEngineError;
 import com.jjProj.atmEngine.common.AtmEngineRequestType;
 import com.jjProj.atmEngine.datamodel.AtmEngineConfig;
@@ -108,7 +110,13 @@ public class AtmEngineServiceImpl implements AtmEngineService{
             AtmEngineUserAccount atmEngineUserAccount = findAccount(atmEngineRequest.getAccountNo(), atmEngineRequest.getAccountPin());
 
             if (atmEngineRequest.getAtmEngineRequestType().equals(AtmEngineRequestType.ATM_MAXIMUM_WITHDRAWAL_BALANCE)){
-                atmEngineResponse.setBalance(atmEngineUserAccount.getBalance()+atmEngineUserAccount.getOverdraft());
+                if (atmEngineUserAccount.getBalance() <0 ){
+                    int negativeBalance = atmEngineUserAccount.getBalance() * -1;
+                    System.out.println("negativeBalance >" +negativeBalance+ " OverD > " + atmEngineUserAccount.getOverdraft()+ " :: Bal > " + atmEngineUserAccount.getBalance() + " (-) >" + (-atmEngineUserAccount.getBalance())  + " -(-) >" + -(-atmEngineUserAccount.getBalance()));
+                    atmEngineResponse.setBalance((atmEngineUserAccount.getOverdraft() - negativeBalance));
+                }else {
+                    atmEngineResponse.setBalance(atmEngineUserAccount.getBalance()+atmEngineUserAccount.getOverdraft());
+                }
             } else {
                 atmEngineResponse.setBalance(atmEngineUserAccount.getBalance());
             }
@@ -157,23 +165,15 @@ public class AtmEngineServiceImpl implements AtmEngineService{
                         /**
                          * Make the withdrawal from the user account, both the balance and the overdraft
                          */
-
-                        System.out.println("Before Balance  : " + atmEngineUserAccount.getBalance() + " OverDraft : "  +atmEngineUserAccount.getOverdraft());
-
                         int newBalance = atmEngineUserAccount.getBalance()-atmEngineRequest.getWithdrawalAmount();
                         atmEngineUserAccount.setBalance(newBalance);
                         if (newBalance < 0) {
                             atmEngineUserAccount.setOverdraft((atmEngineUserAccount.getOverdraft() + newBalance));
-
                         }
                         /**
                          * set the balance in the response
                          */
                         atmEngineResponse.setBalance(atmEngineUserAccount.getBalance());
-
-                        System.out.println("After Balance  : " + atmEngineUserAccount.getBalance() + " OverDraft : "  +atmEngineUserAccount.getOverdraft());
-
-
 
                         /**
                          * set the withdrawal details for the Currency notes in the response
