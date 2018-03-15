@@ -157,15 +157,23 @@ public class AtmEngineServiceImpl implements AtmEngineService{
                         /**
                          * Make the withdrawal from the user account, both the balance and the overdraft
                          */
+
+                        System.out.println("Before Balance  : " + atmEngineUserAccount.getBalance() + " OverDraft : "  +atmEngineUserAccount.getOverdraft());
+
                         int newBalance = atmEngineUserAccount.getBalance()-atmEngineRequest.getWithdrawalAmount();
                         atmEngineUserAccount.setBalance(newBalance);
                         if (newBalance < 0) {
-                            atmEngineUserAccount.setOverdraft(atmEngineUserAccount.getOverdraft()-newBalance);
+                            atmEngineUserAccount.setOverdraft((atmEngineUserAccount.getOverdraft() + newBalance));
+
                         }
                         /**
                          * set the balance in the response
                          */
                         atmEngineResponse.setBalance(atmEngineUserAccount.getBalance());
+
+                        System.out.println("After Balance  : " + atmEngineUserAccount.getBalance() + " OverDraft : "  +atmEngineUserAccount.getOverdraft());
+
+
 
                         /**
                          * set the withdrawal details for the Currency notes in the response
@@ -320,7 +328,6 @@ public class AtmEngineServiceImpl implements AtmEngineService{
 
             int remainder = amountToWithdraw%denomination;
             boolean addedDenominationNotes = false;
-            System.out.println("amountToWithdraw :" + amountToWithdraw + " Denomination :"  +denomination + " Remainder :" + remainder + " #OfNotes : " +atmEngineCurrency.getCurrentNumberOfNotes()+ " Amount : " +atmEngineCurrency.getCurrentAmount());
             if (atmEngineCurrency.getCurrentAmount() > 0){
                 AtmEngineCurrency atmEngineCurrencyToStore = new AtmEngineCurrency(denomination, 0);
                 int numberOfNotesInDenomination = atmEngineCurrency.getCurrentNumberOfNotes();
@@ -333,8 +340,6 @@ public class AtmEngineServiceImpl implements AtmEngineService{
                         addedDenominationNotes = true;
 
                         amountToWithdraw = amountToWithdraw-denomination;
-
-                        System.out.println("denomination :"  +denomination + " amountToWithdraw : " + amountToWithdraw);
 
                         /**
                          * TODO :: The withdrawal can still fail so we should not change the ATM values here until we are sure
