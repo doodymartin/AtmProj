@@ -111,9 +111,7 @@ public class AtmEngineServiceImpl implements AtmEngineService{
 
             if (atmEngineRequest.getAtmEngineRequestType().equals(AtmEngineRequestType.ATM_MAXIMUM_WITHDRAWAL_BALANCE)){
                 if (atmEngineUserAccount.getBalance() <0 ){
-                    int negativeBalance = atmEngineUserAccount.getBalance() * -1;
-                    System.out.println("negativeBalance >" +negativeBalance+ " OverD > " + atmEngineUserAccount.getOverdraft()+ " :: Bal > " + atmEngineUserAccount.getBalance() + " (-) >" + (-atmEngineUserAccount.getBalance())  + " -(-) >" + -(-atmEngineUserAccount.getBalance()));
-                    atmEngineResponse.setBalance((atmEngineUserAccount.getOverdraft() - negativeBalance));
+                    atmEngineResponse.setBalance(atmEngineUserAccount.getOverdraft());
                 }else {
                     atmEngineResponse.setBalance(atmEngineUserAccount.getBalance()+atmEngineUserAccount.getOverdraft());
                 }
@@ -149,8 +147,13 @@ public class AtmEngineServiceImpl implements AtmEngineService{
             if (getAtmEngineConfig().getAtmMachineCurrentBalance() >= atmEngineRequest.getWithdrawalAmount()){
                 /**
                  * Check the user has enough funds
+                 * Check for a negative balance first.
                  */
-                if ((atmEngineUserAccount.getBalance()+atmEngineUserAccount.getOverdraft()) >= atmEngineRequest.getWithdrawalAmount()){
+                int userBalance = 0;
+                if (atmEngineUserAccount.getBalance() > 0){
+                    userBalance = atmEngineUserAccount.getBalance();
+                }
+                if ((userBalance+atmEngineUserAccount.getOverdraft()) >= atmEngineRequest.getWithdrawalAmount()){
 
                     /**
                      * Find if the denominations and number of notes for the withdrawal
@@ -168,7 +171,7 @@ public class AtmEngineServiceImpl implements AtmEngineService{
                         int newBalance = atmEngineUserAccount.getBalance()-atmEngineRequest.getWithdrawalAmount();
                         atmEngineUserAccount.setBalance(newBalance);
                         if (newBalance < 0) {
-                            atmEngineUserAccount.setOverdraft((atmEngineUserAccount.getOverdraft() + newBalance));
+                            atmEngineUserAccount.setOverdraft((atmEngineUserAccount.getOverdraft() - atmEngineRequest.getWithdrawalAmount()));
                         }
                         /**
                          * set the balance in the response
@@ -210,11 +213,15 @@ public class AtmEngineServiceImpl implements AtmEngineService{
         /**
          * This is checking the following,
          *
+         * 1) Check that the withdrawal amount is not negative
          * 1) The Account number is valid and exists in the known account number list
          * 2) The pin is valid and matches the account pin
          * 3) The withdrawal amount is a multiple of 5 as this is what the ATM can only dispense
          */
-        if (atmEngineRequest.getAccountNo() == null &&
+        if (atmEngineRequest.getWithdrawalAmount() <0 ){
+            atmEngineResponse.setResponseCode(AtmEngineError.WITHDRAWAL_AMOUNT_ERR.getErrorCode());
+            atmEngineResponse.setResponseMessage(AtmEngineError.WITHDRAWAL_AMOUNT_ERR.getResponseDescription());
+        } else if (atmEngineRequest.getAccountNo() == null &&
                 atmEngineRequest.getAccountNo() == "" ){
             atmEngineResponse.setResponseCode(AtmEngineError.ACCOUNT_LOGIN_ERR.getErrorCode());
             atmEngineResponse.setResponseMessage(AtmEngineError.ACCOUNT_LOGIN_ERR.getResponseDescription());

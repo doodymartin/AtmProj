@@ -16,6 +16,7 @@ public enum AtmEngineError {
     ATM_AMOUNT_ERR(4,"ATM can only despense amount in multiples of 5."),
     ATM_FUNDS_ERR(5,"ATM does not have the funds for withdrawl."),
     ACCOUNT_FUNDS_ERR(6,"Insufficent funds in account."),
+    WITHDRAWAL_AMOUNT_ERR(7,"The withdrawal amount is not valid."),
     UNKNOWN(7,"Unknown error.");
 
     private final int errorCode;
