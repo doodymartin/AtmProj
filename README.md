@@ -42,7 +42,7 @@ The Application has only being built and tested on a Windows 7 environment.
 Building the application
 ---------------------------------
 To build the application the user will need access to a **Maven repository** that has holds the 3rd party 
-dependencies specified in this README below.
+dependencies required.
 
 To build the application go the the directory where the application's **pom.xml** is located @ ~\atmEngine\ 
 and run the maven build command below. The application's executable jar will be produced in the target directory. 
