@@ -56,10 +56,22 @@ To run the ATM Engine application you can use the Java virtual machine to run th
 
  - **java -jar atmEngine-1.0-SNAPSHOT.jar**
 
+The will use the default Web container port of 8080 is used by the application, so the URL for the REST interface must use that port.
+ 
 ----------------------
-Command Line Arguments
+Usage
 ----------------------
-None.
+There are 3 methods on the REST interface provided by the ATM Engine.
+
+ - **getBalance** Get the current balance for a user account
+ - **getMaximumWithdrawalBalance** Get the current balance total funds available to the user account
+ - **makeAccountWithdrawal** Make a withdrawal from the user account
+
+The service methods can be invoked by hitting the relevant URLs, examples are given below showing the parameters required.
+
+http://localhost:8080/getBalance?accountNo=123456789&accountPin=1234
+http://localhost:8080/getMaximumWithdrawalBalance?accountNo=123456789&accountPin=1234
+http://localhost:8080/makeAccountWithdrawal?accountNo=123456789&accountPin=1234&withdrawalAmount=5
 
 ----------------------------------
 3rd Party Jars required for Build 

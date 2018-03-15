@@ -42,5 +42,8 @@ public class AtmEngineCurrency {
     public void setCurrentAmount(int currentAmount) {
         this.currentAmount = currentAmount;
     }
+    public void recalculateCurrentAmount() {
+        this.currentAmount = this.demonination * this.currentNumberOfNotes;
+    }
 
 }
