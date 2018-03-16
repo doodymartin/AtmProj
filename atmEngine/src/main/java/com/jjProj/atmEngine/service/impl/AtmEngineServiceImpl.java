@@ -41,6 +41,9 @@ public class AtmEngineServiceImpl implements AtmEngineService{
     public AtmEngineConfig getAtmEngineConfig() {
         return atmEngineConfig;
     }
+    public void setAtmEngineConfig(AtmEngineConfig atmEngineConfig) {
+        this.atmEngineConfig = atmEngineConfig;
+    }
 
     @Override
     /**
@@ -218,7 +221,7 @@ public class AtmEngineServiceImpl implements AtmEngineService{
          * 2) The pin is valid and matches the account pin
          * 3) The withdrawal amount is a multiple of 5 as this is what the ATM can only dispense
          */
-        if (atmEngineRequest.getWithdrawalAmount() <0 ){
+        if (atmEngineRequest.getWithdrawalAmount() < 0 ){
             atmEngineResponse.setResponseCode(AtmEngineError.WITHDRAWAL_AMOUNT_ERR.getErrorCode());
             atmEngineResponse.setResponseMessage(AtmEngineError.WITHDRAWAL_AMOUNT_ERR.getResponseDescription());
         } else if (atmEngineRequest.getAccountNo() == null &&
@@ -303,7 +306,6 @@ public class AtmEngineServiceImpl implements AtmEngineService{
         int atmEngineCurrentAmount = 0;
 
         for (Map.Entry<Integer, AtmEngineCurrency> entry : getAtmEngineConfig().getAtmEngineCurrencyNotes().entrySet()) {
-            //int demonination = entry.getKey();
             AtmEngineCurrency demoninationDetail = entry.getValue();
             atmEngineCurrentAmount += demoninationDetail.getCurrentAmount();
         }
@@ -324,7 +326,7 @@ public class AtmEngineServiceImpl implements AtmEngineService{
         List<AtmEngineCurrency> atmEngineCurrencies = new ArrayList<AtmEngineCurrency>();
         withdrawalCurrency.setAtmEngineCurrencies(atmEngineCurrencies);
 
-        // Get sorted denominations
+        // Get sorted denominations in decending order
         TreeSet<Integer> denominations = new TreeSet<Integer>(getAtmEngineConfig().getAtmEngineCurrencyNotes().keySet());
         Iterator<Integer> iter = denominations.descendingIterator();
 
@@ -333,7 +335,6 @@ public class AtmEngineServiceImpl implements AtmEngineService{
             int denomination = iter.next();
             AtmEngineCurrency atmEngineCurrency = getAtmEngineConfig().getAtmEngineCurrencyNotes().get(denomination);
 
-            int remainder = amountToWithdraw%denomination;
             boolean addedDenominationNotes = false;
             if (atmEngineCurrency.getCurrentAmount() > 0){
                 AtmEngineCurrency atmEngineCurrencyToStore = new AtmEngineCurrency(denomination, 0);
@@ -345,9 +346,7 @@ public class AtmEngineServiceImpl implements AtmEngineService{
                          * we only want to send notes we take as part of the withdrawal in the REST response
                          */
                         addedDenominationNotes = true;
-
                         amountToWithdraw = amountToWithdraw-denomination;
-
                         /**
                          * TODO :: The withdrawal can still fail so we should not change the ATM values here until we are sure
                          * the withdrawal can be successfull.
