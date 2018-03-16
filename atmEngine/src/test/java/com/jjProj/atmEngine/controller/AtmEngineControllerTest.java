@@ -86,13 +86,13 @@ public class AtmEngineControllerTest {
 
 //        testRestTemplate.getForObject(baseUrl + "/getBalance", String.class);
 
-/*        mockMvc.perform(MockMvcRequestBuilders.get("/getBalance")
+        mockMvc.perform(MockMvcRequestBuilders.get("/getBalance")
                 .param("accountNo", "123456789")
                 .param("accountPin", "1234")
                 .accept(MediaType.APPLICATION_JSON)).andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().string(containsString("Succeeded")));
-*/
+
 /*        this.mockMvc.perform(get("/getBalance")
                 .contentType(contentType)
                 .param("accountNo", "123456789")

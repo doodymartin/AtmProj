@@ -74,6 +74,13 @@ http://localhost:8080/getMaximumWithdrawalBalance?accountNo=123456789&accountPin
 http://localhost:8080/makeAccountWithdrawal?accountNo=123456789&accountPin=1234&withdrawalAmount=5
 
 ----------------------------------
+Known Issues
+----------------------------------
+ - Failed cash withdrawals from the ATM Engine can lead to an issue, as at the moment in the ATM Engine, deductions are 
+ made to the actual ATM cash reserves as the withdrawal is processed. Deductions from the ATM cash reserves 
+ should only be made once the user withdrawal can be completed successfully.
+
+----------------------------------
 3rd Party Jars required for Build 
 ----------------------------------
 TODO
