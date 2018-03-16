@@ -34,7 +34,7 @@ import com.jjProj.atmEngine.service.AtmEngineService;
 public class AtmEngineServiceImpl implements AtmEngineService{
 
     /**
-     * This is the Config user to model the ATM.
+     * This is the Configuration object used to model the ATM.
      */
     AtmEngineConfig atmEngineConfig = new AtmEngineConfig();
 
@@ -47,9 +47,9 @@ public class AtmEngineServiceImpl implements AtmEngineService{
 
     @Override
     /**
-     * This method is used to initialise the ATM Engine.
+     * This method is used to initialise the ATM Engine after startup of the ATM Engine application.
      *
-     * @return AtmEngineConfig - The config loaded for the ATM Engine
+     * @return AtmEngineConfig - The config object loaded for the ATM Engine
      */
     public AtmEngineConfig initAtmEngine() {
 
@@ -100,7 +100,7 @@ public class AtmEngineServiceImpl implements AtmEngineService{
      *
      *  The appropriate user balance amount is found and returned.
      *
-     * @param AtmEngineRequest - atmEngineRequest with details of the user
+     * @param AtmEngineRequest - atmEngineRequest with details of the user request
      * @return AtmEngineResponse - Response object
      */
     public AtmEngineResponse getAccountBalance(AtmEngineRequest atmEngineRequest) {
@@ -129,7 +129,7 @@ public class AtmEngineServiceImpl implements AtmEngineService{
     /**
      * This method is used for the service request to withdraw an amount for a user.
      *
-     * @param AtmEngineRequest - atmEngineRequest with details of the user and request
+     * @param AtmEngineRequest - atmEngineRequest with details of the user request
      * @return AtmEngineResponse - Response object
      */
     public AtmEngineResponse makeAccountWithdrawal(AtmEngineRequest atmEngineRequest) {
@@ -162,10 +162,14 @@ public class AtmEngineServiceImpl implements AtmEngineService{
                      * Find if the denominations and number of notes for the withdrawal
                      */
                     WithdrawalCurrency withdrawalCurrency = findCurrencyMatch(atmEngineRequest);
+                    /**
+                     * if withdrawalCurrency is null we failed to find the correct notes in the ATM reserves
+                     *
+                     */
                     if (withdrawalCurrency != null){
                         /**
                          * TODO : We should only make the withdrawal from the ATM once we know we can do so safely, but at the moment
-                         * it's done in the findCurrencyMatch method.
+                         * it's done in the findCurrencyMatch method automatically.
                          */
 
                         /**
@@ -185,10 +189,14 @@ public class AtmEngineServiceImpl implements AtmEngineService{
                          * set the withdrawal details for the Currency notes in the response
                          */
                         atmEngineResponse.setWithdrawalCurrency(withdrawalCurrency);
+                    } else {
+                        /**
+                         * TODO : Handle the error case of not having the notes in the ATM to handle the request.
+                         */
                     }
 
                     /**
-                     * Calculate the ATM current balance again after the withdrawal
+                     * Calculate the new ATM current balance again after the withdrawal
                      */
                     calculateAndSetCurrentAtmEngineAmount();
                 } else {

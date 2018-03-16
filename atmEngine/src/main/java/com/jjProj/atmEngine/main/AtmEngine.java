@@ -14,7 +14,7 @@ import com.jjProj.atmEngine.service.impl.AtmEngineServiceImpl;
 /**
  * ATM Engine Main class.
  *
- * Create a Sprin Boot application and scan for Spring resurces.
+ * Create a Spring Boot application and scan for Spring resources.
  */
 @SpringBootApplication
 @ComponentScan("com.jjProj")
@@ -28,7 +28,7 @@ public class AtmEngine {
         ConfigurableApplicationContext atmEngineApplication = SpringApplication.run(AtmEngine.class, args);
 
         /**
-         * Initialise the ATM engine by doing the following,..
+         * Initialise the ATM engine by doing the following after the Spring application is available,..
          *
          * 1) Load User Account information
          * 2) Initial the ATM engine cash

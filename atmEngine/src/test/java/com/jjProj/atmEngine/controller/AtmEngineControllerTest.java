@@ -8,115 +8,92 @@ package com.jjProj.atmEngine.controller;
 
 import static org.junit.Assert.*;
 
-import org.springframework.http.MediaType;
-
-import java.io.IOException;
-import java.nio.charset.Charset;
-
-import org.springframework.test.web.servlet.MockMvc;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import static org.assertj.core.api.Assertions.assertThat;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.skyscreamer.jsonassert.JSONAssert;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.web.server.LocalServerPort;
-import org.springframework.test.context.junit4.SpringRunner;
-import org.springframework.test.context.web.WebAppConfiguration;
-import org.springframework.web.context.WebApplicationContext;
-import static org.hamcrest.Matchers.containsString;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.boot.test.web.client.TestRestTemplate;
+import org.springframework.boot.web.server.LocalServerPort;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.test.context.junit4.SpringRunner;
+import org.junit.Before;
+import org.junit.Ignore;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import com.jjProj.atmEngine.datamodel.AtmEngineConfig;
 import com.jjProj.atmEngine.main.AtmEngine;
+import com.jjProj.atmEngine.service.impl.AtmEngineServiceImpl;
 
 /**
- * TODO : I have not had a chance to get any test coverage in here.
+ * Test class for integration testing the Controller REST services for the ATM Engine
+ *
+ * TODO : There is scope for more detailed edge test cases around account limits and failure test cases.
+ *
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT,classes = AtmEngine.class)
-@AutoConfigureMockMvc
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,classes = AtmEngine.class)
 public class AtmEngineControllerTest {
+    String accountNo = "123456789";
+    String accountPin = "1234";
 
-    private MediaType contentType = new MediaType(MediaType.APPLICATION_JSON.getType(),
-            MediaType.APPLICATION_JSON.getSubtype(),
-            Charset.forName("utf8"));
-
-    @Autowired
-    private AtmEngineController atmEngineController;
-
-//    @Autowired
-    private MockMvc mockMvc;
+    @LocalServerPort
+    private int atmEnginePort;
 
     @Autowired
-    private WebApplicationContext webApplicationContext;
+    private AtmEngineServiceImpl atmEngineService;
+
+    @Autowired
+    private TestRestTemplate restTemplate = new TestRestTemplate();
+
+    HttpHeaders headers = new HttpHeaders();
 
     @Before
     public void setup() {
-//        this.mockMvc = MockMvcBuilders.standaloneSetup(atmEngineController).build();
-        this.mockMvc = MockMvcBuilders.standaloneSetup(this.webApplicationContext).build();
+        AtmEngineConfig atmEngineConfig = atmEngineService.initAtmEngine();
+        atmEngineService.setAtmEngineConfig(atmEngineConfig);
     }
 
     @Test
     public void testGetBalance() throws Exception {
-
-        //Mocking Controller
-/*        atmEngineController = mock(AtmEngineController.class);
-
-         this.mockMvc.perform(get("/")
-                 .accept(MediaType.parseMediaType("application/json;charset=UTF-8")))
-                 .andExpect(status().isOk())
-                 .andExpect(content().mimeType(MediaType.APPLICATION_JSON));
-*/
-//        this.mockMvc.perform(get("/getBalance")).andDo(print()).andExpect(status().isOk())
-//        .andExpect(content().string(containsString("Hello World")));
-
-
-//        testRestTemplate.getForObject(baseUrl + "/getBalance", String.class);
-
-        mockMvc.perform(MockMvcRequestBuilders.get("/getBalance")
-                .param("accountNo", "123456789")
-                .param("accountPin", "1234")
-                .accept(MediaType.APPLICATION_JSON)).andDo(print())
-                .andExpect(status().isOk())
-                .andExpect(content().string(containsString("Succeeded")));
-
-/*        this.mockMvc.perform(get("/getBalance")
-                .contentType(contentType)
-                .param("accountNo", "123456789")
-                .param("accountPin", "1234")
-                ).andDo(print())
-                .andExpect(status().isOk())
-        .andExpect(content().string(containsString("Succeeded")));
-*/
-        assertTrue("OK", true);
-    }
-
-
-    @Test
-    public void testGetMaximumWithdrawalBalance() throws IOException {
-        assertTrue("OK", true);
+        HttpEntity<String> entity = new HttpEntity<String>(null, headers);
+        ResponseEntity<String> atmEngineResponse = restTemplate.exchange(
+                createURLForAtmEngine("/getBalance?accountNo=123456789&accountPin=1234"),
+                HttpMethod.GET,
+                entity,
+                String.class);
+        String expectedAtmEngineResponse = "{\"balance\":800,\"responseCode\":0,\"responseMessage\":\"Request Succeeded.\",\"withdrawalCurrency\":null}";
+        JSONAssert.assertEquals(expectedAtmEngineResponse, atmEngineResponse.getBody(), false);
     }
 
     @Test
-    public void testMakeAccountWithdrawal() throws IOException {
-        assertTrue("OK", true);
+    public void testGetMaximumWithdrawalBalance() throws Exception {
+        HttpEntity<String> entity = new HttpEntity<String>(null, headers);
+        ResponseEntity<String> atmEngineResponse = restTemplate.exchange(
+                createURLForAtmEngine("/getMaximumWithdrawalBalance?accountNo=123456789&accountPin=1234"),
+                HttpMethod.GET,
+                entity,
+                String.class);
+        String expectedAtmEngineResponse = "{\"balance\":1000,\"responseCode\":0,\"responseMessage\":\"Request Succeeded.\",\"withdrawalCurrency\":null}";
+        JSONAssert.assertEquals(expectedAtmEngineResponse, atmEngineResponse.getBody(), false);
     }
 
-    @Test
-    public void contexLoads() throws Exception {
-        assertThat(atmEngineController).isNotNull();
+    @Ignore
+    public void testMakeAccountWithdrawal() throws Exception {
+        HttpEntity<String> entity = new HttpEntity<String>(null, headers);
+        ResponseEntity<String> atmEngineResponse = restTemplate.exchange(
+                createURLForAtmEngine("/makeAccountWithdrawal?accountNo=123456789&accountPin=1234&withdrawalAmount=675"),
+                HttpMethod.GET,
+                entity,
+                String.class);
+        String expectedAtmEngineResponse = "{\"balance\":125,\"responseCode\":0,\"responseMessage\":\"Request Succeeded.\",\"withdrawalCurrency\":{\"atmEngineCurrencies\":[{\"demonination\":50,\"currentNumberOfNotes\":13,\"currentAmount\":650},{\"demonination\":20,\"currentNumberOfNotes\":1,\"currentAmount\":20},{\"demonination\":5,\"currentNumberOfNotes\":1,\"currentAmount\":5}]}}";
+        JSONAssert.assertEquals(expectedAtmEngineResponse, atmEngineResponse.getBody(), false);
     }
+
+    private String createURLForAtmEngine(String uri) {
+        return "http://localhost:"+ atmEnginePort+uri;
+    }
+
 }
