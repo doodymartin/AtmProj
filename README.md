@@ -55,7 +55,9 @@ To run the ATM Engine application you can use the Java virtual machine to run th
 
  - **java -jar atmEngine-1.0-SNAPSHOT.jar**
 
-The application will use the default Web container port of 8080, so the URLs for the REST interface must use that port.
+The application will use the default Web container port of **8080**, so the URLs for the REST interface must use that port.
+It is possible to change this default port in the application at build time by changing the **server.port** in the 
+properties file **~src/main/resources/application.properties**.
  
 ----------------------
 Usage
