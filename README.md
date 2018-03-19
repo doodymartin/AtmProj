@@ -61,28 +61,26 @@ The will use the default Web container port of 8080 is used by the application, 
 ----------------------
 Usage
 ----------------------
-There are 3 methods on the REST interface provided by the ATM Engine.
+There are 3 methods on the REST interface provided by the ATM Engine. The service methods can be invoked by hitting the 
+relevant URLs, examples are given below showing the parameters required.
 
  1. **getBalance** Get the current balance for a user account
-   - **Parameters**
-    - accountNo
-	- accountPin
+    - **http://localhost:8080/getBalance?accountNo=123456789&accountPin=1234**
+    - **Parameters**
+      - accountNo
+	  - accountPin
  2. **getMaximumWithdrawalBalance** Get the user's current total funds available (balance + overdraft)
-   - **Parameters**
-    - accountNo
-	- accountPin
+    - **http://localhost:8080/getMaximumWithdrawalBalance?accountNo=123456789&accountPin=1234**
+    - **Parameters**
+      - accountNo
+	  - accountPin
  3. **makeAccountWithdrawal** Make a withdrawal from the user account
-   - **Parameters**
-    - accountNo
-	- accountPin
-	- withdrawalAmount
-	
-The service methods can be invoked by hitting the relevant URLs, examples are given below showing the parameters required.
-
-http://localhost:8080/getBalance?accountNo=123456789&accountPin=1234
-http://localhost:8080/getMaximumWithdrawalBalance?accountNo=123456789&accountPin=1234
-http://localhost:8080/makeAccountWithdrawal?accountNo=123456789&accountPin=1234&withdrawalAmount=5
-
+    - **http://localhost:8080/makeAccountWithdrawal?accountNo=123456789&accountPin=1234&withdrawalAmount=5**
+    - **Parameters**
+      - accountNo
+	  - accountPin
+	  - withdrawalAmount
+	  
  - **NOTE** all parameters are **Required** to be present in the REST service methods above, an error will be generated if not present.
  
 ----------------------------------
@@ -93,8 +91,8 @@ Known Issues
 ----------------------------------
 Assumptions
 ----------------------------------
- -1 The user account overdraft cannot go below zero.
- -2 There is a requirement to provide separate REST service methods for **getBalance** and **getMaximumWithdrawalBalance**
+ 1. The user account overdraft cannot go below zero.
+ 2. There is a requirement to provide separate REST service methods for **getBalance** and **getMaximumWithdrawalBalance**
 
 ----------------------------------
 3rd Party Jars required for Build 
