@@ -26,8 +26,7 @@ Supported Deployment/Installation Environment
  - Microsoft Windows 7 operating system
  - Java 1.8.0_121
 
-The Application has only being installed and tested on a Windows 7 environment. The behaviour of some of the
-File operations may differ on other operating systems.
+The Application has only being installed and tested on a Windows 7 environment.
 
 ---------------------------------
 Build Environment
@@ -56,7 +55,7 @@ To run the ATM Engine application you can use the Java virtual machine to run th
 
  - **java -jar atmEngine-1.0-SNAPSHOT.jar**
 
-The will use the default Web container port of 8080 is used by the application, so the URL for the REST interface must use that port.
+The application will use the default Web container port of 8080, so the URLs for the REST interface must use that port.
  
 ----------------------
 Usage
@@ -102,7 +101,7 @@ TODO
 -------------------------------------------
 Tests / Business requirement Validation
 -------------------------------------------
-ATM Engine Controller and Service layer methods have a high % coverage.
+The ATM Engine code base currently has a **92% JUnit test coverage**.
 
 
 -------------------------
