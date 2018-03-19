@@ -64,6 +64,16 @@ public class AtmEngineControllerTest {
                 HttpMethod.GET,
                 entity,
                 String.class);
+
+        /**
+         * Assert the HTTP response
+         */
+        assertEquals(atmEngineResponse.getStatusCodeValue(), 200);
+        assertTrue(atmEngineResponse.getBody().contains("Request Succeeded"));
+
+        /**
+         * Assert the JSON application response
+         */
         String expectedAtmEngineResponse = "{\"balance\":800,\"responseCode\":0,\"responseMessage\":\"Request Succeeded.\",\"withdrawalCurrency\":null}";
         JSONAssert.assertEquals(expectedAtmEngineResponse, atmEngineResponse.getBody(), false);
     }
@@ -76,11 +86,20 @@ public class AtmEngineControllerTest {
                 HttpMethod.GET,
                 entity,
                 String.class);
+        /**
+         * Assert the HTTP response
+         */
+        assertEquals(atmEngineResponse.getStatusCodeValue(), 200);
+        assertTrue(atmEngineResponse.getBody().contains("Request Succeeded"));
+
+        /**
+         * Assert the JSON application response
+         */
         String expectedAtmEngineResponse = "{\"balance\":1000,\"responseCode\":0,\"responseMessage\":\"Request Succeeded.\",\"withdrawalCurrency\":null}";
         JSONAssert.assertEquals(expectedAtmEngineResponse, atmEngineResponse.getBody(), false);
     }
 
-    @Ignore
+    @Test
     public void testMakeAccountWithdrawal() throws Exception {
         HttpEntity<String> entity = new HttpEntity<String>(null, headers);
         ResponseEntity<String> atmEngineResponse = restTemplate.exchange(
@@ -88,7 +107,92 @@ public class AtmEngineControllerTest {
                 HttpMethod.GET,
                 entity,
                 String.class);
+        /**
+         * Assert the HTTP response
+         */
+        assertEquals(atmEngineResponse.getStatusCodeValue(), 200);
+        assertTrue(atmEngineResponse.getBody().contains("Request Succeeded"));
+
+        /**
+         * Assert the JSON application response
+         */
         String expectedAtmEngineResponse = "{\"balance\":125,\"responseCode\":0,\"responseMessage\":\"Request Succeeded.\",\"withdrawalCurrency\":{\"atmEngineCurrencies\":[{\"demonination\":50,\"currentNumberOfNotes\":13,\"currentAmount\":650},{\"demonination\":20,\"currentNumberOfNotes\":1,\"currentAmount\":20},{\"demonination\":5,\"currentNumberOfNotes\":1,\"currentAmount\":5}]}}";
+        JSONAssert.assertEquals(expectedAtmEngineResponse, atmEngineResponse.getBody(), false);
+    }
+
+    /*
+     * **************************************************************
+     * Failure JUnit  test cases both HTTP and application failures
+     *
+     * TODO : include more HTTP test cases for all REST service methods
+     *
+     * **************************************************************
+     */
+    @Test
+    public void test_HTTP_400_ParameterNotPresentError() throws Exception{
+        HttpEntity<String> entity = new HttpEntity<String>(null, headers);
+        ResponseEntity<String> atmEngineResponse = restTemplate.exchange(
+                createURLForAtmEngine("/makeAccountWithdrawal?accountNo=123456789&accountPin=1234"),
+                HttpMethod.GET,
+                entity,
+                String.class);
+        /**
+         * Assert the HTTP response
+         */
+        assertEquals(atmEngineResponse.getStatusCodeValue(), 400);
+        assertTrue(atmEngineResponse.getBody().contains("Bad Request"));
+    }
+
+    @Test
+    public void test_HTTP_404_InvalidRestServiceMethodName() throws Exception{
+        HttpEntity<String> entity = new HttpEntity<String>(null, headers);
+        ResponseEntity<String> atmEngineResponse = restTemplate.exchange(
+                createURLForAtmEngine("/makeAccountWithdrawalError?accountNo=123456789&accountPin=1234&withdrawalAmount=20"),
+                HttpMethod.GET,
+                entity,
+                String.class);
+        /**
+         * Assert the HTTP response
+         */
+        assertEquals(atmEngineResponse.getStatusCodeValue(), 404);
+        assertTrue(atmEngineResponse.getBody().contains("Not Found"));
+    }
+
+    @Test
+    public void testMakeAccountWithdrawalExceedingAtmReserves() throws Exception {
+        HttpEntity<String> entity = new HttpEntity<String>(null, headers);
+        ResponseEntity<String> atmEngineResponse = restTemplate.exchange(
+                createURLForAtmEngine("/makeAccountWithdrawal?accountNo=123456789&accountPin=1234&withdrawalAmount=3000"),
+                HttpMethod.GET,
+                entity,
+                String.class);
+        /**
+         * Assert the HTTP response
+         */
+        assertEquals(atmEngineResponse.getStatusCodeValue(), 200);
+        /**
+         * Assert the JSON application response
+         */
+        String expectedAtmEngineResponse = "{\"balance\":800,\"responseCode\":5,\"responseMessage\":\"ATM does not have the funds for withdrawl.\",\"withdrawalCurrency\":null}";
+        JSONAssert.assertEquals(expectedAtmEngineResponse, atmEngineResponse.getBody(), false);
+    }
+
+    @Test
+    public void testMakeAccountWithdrawalExceedingAccountLimit() throws Exception {
+        HttpEntity<String> entity = new HttpEntity<String>(null, headers);
+        ResponseEntity<String> atmEngineResponse = restTemplate.exchange(
+                createURLForAtmEngine("/makeAccountWithdrawal?accountNo=123456789&accountPin=1234&withdrawalAmount=1590"),
+                HttpMethod.GET,
+                entity,
+                String.class);
+        /**
+         * Assert the HTTP response
+         */
+        assertEquals(atmEngineResponse.getStatusCodeValue(), 200);
+        /**
+         * Assert the JSON application response
+         */
+        String expectedAtmEngineResponse = "{\"balance\":800,\"responseCode\":6,\"responseMessage\":\"Insufficent funds in account.\",\"withdrawalCurrency\":null}";
         JSONAssert.assertEquals(expectedAtmEngineResponse, atmEngineResponse.getBody(), false);
     }
 

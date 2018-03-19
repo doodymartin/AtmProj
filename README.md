@@ -63,22 +63,38 @@ Usage
 ----------------------
 There are 3 methods on the REST interface provided by the ATM Engine.
 
- - **getBalance** Get the current balance for a user account
- - **getMaximumWithdrawalBalance** Get the current balance total funds available to the user account
- - **makeAccountWithdrawal** Make a withdrawal from the user account
-
+ 1. **getBalance** Get the current balance for a user account
+   - **Parameters**
+    - accountNo
+	- accountPin
+ 2. **getMaximumWithdrawalBalance** Get the user's current total funds available (balance + overdraft)
+   - **Parameters**
+    - accountNo
+	- accountPin
+ 3. **makeAccountWithdrawal** Make a withdrawal from the user account
+   - **Parameters**
+    - accountNo
+	- accountPin
+	- withdrawalAmount
+	
 The service methods can be invoked by hitting the relevant URLs, examples are given below showing the parameters required.
 
 http://localhost:8080/getBalance?accountNo=123456789&accountPin=1234
 http://localhost:8080/getMaximumWithdrawalBalance?accountNo=123456789&accountPin=1234
 http://localhost:8080/makeAccountWithdrawal?accountNo=123456789&accountPin=1234&withdrawalAmount=5
 
+ - **NOTE** all parameters are **Required** to be present in the REST service methods above, an error will be generated if not present.
+ 
 ----------------------------------
 Known Issues
 ----------------------------------
- - Failed cash withdrawals from the ATM Engine can lead to an issue, as at the moment in the ATM Engine, deductions are 
- made to the actual ATM cash reserves as the withdrawal is processed. Deductions from the ATM cash reserves 
- should only be made once the user withdrawal can be completed successfully.
+ - None.
+
+----------------------------------
+Assumptions
+----------------------------------
+ -1 The user account overdraft cannot go below zero.
+ -2 There is a requirement to provide separate REST service methods for **getBalance** and **getMaximumWithdrawalBalance**
 
 ----------------------------------
 3rd Party Jars required for Build 
@@ -90,7 +106,6 @@ Tests / Business requirement Validation
 -------------------------------------------
 ATM Engine Controller and Service layer methods have a high % coverage.
 
-TODO : More detailed junit test coverage is required for edge cases in both the controller and Service layers.
 
 -------------------------
 Performance & Profiling 

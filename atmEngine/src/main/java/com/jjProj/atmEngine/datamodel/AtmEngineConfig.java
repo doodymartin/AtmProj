@@ -11,7 +11,7 @@ import java.util.Map;
 /**
  * ATM Engine Config Class, used to hold the following
  *
- * 1) Current amount available in the ATM
+ * 1) Current amount available in the ATM cash reserves
  * 2) The list of user accounts known by the ATM
  * 3) The Denomination and amount of notes held in the ATM
  */

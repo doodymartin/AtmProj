@@ -6,7 +6,7 @@
 package com.jjProj.atmEngine.common;
 
 /**
- * ATM Engine Transaction Types enum.
+ * ATM Engine interface API enum.
  */
 public enum AtmEngineRequestType {
 

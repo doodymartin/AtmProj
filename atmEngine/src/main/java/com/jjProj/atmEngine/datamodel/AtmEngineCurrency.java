@@ -12,7 +12,7 @@ package com.jjProj.atmEngine.datamodel;
  * 2) The number of the notes held in ATM
  * 3) The total amount available of this type of denomination in ATM
  */
-public class AtmEngineCurrency {
+public class AtmEngineCurrency implements Cloneable{
 
     int demonination;
     int currentNumberOfNotes;
@@ -46,4 +46,17 @@ public class AtmEngineCurrency {
         this.currentAmount = this.demonination * this.currentNumberOfNotes;
     }
 
+    @Override
+    /**
+     * Clone an object of this type
+     */
+    public Object clone() throws CloneNotSupportedException {
+       AtmEngineCurrency atmEngineCurrencyClone = (AtmEngineCurrency)super.clone();
+
+       atmEngineCurrencyClone.setCurrentAmount(atmEngineCurrencyClone.getCurrentAmount());
+       atmEngineCurrencyClone.setCurrentNumberOfNotes(atmEngineCurrencyClone.getCurrentNumberOfNotes());
+       atmEngineCurrencyClone.setDemonination(atmEngineCurrencyClone.getDemonination());
+
+       return atmEngineCurrencyClone;
+    }
 }

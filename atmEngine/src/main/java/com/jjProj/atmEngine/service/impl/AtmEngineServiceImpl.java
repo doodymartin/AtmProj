@@ -38,16 +38,12 @@ public class AtmEngineServiceImpl implements AtmEngineService{
      */
     AtmEngineConfig atmEngineConfig = new AtmEngineConfig();
 
-    public AtmEngineConfig getAtmEngineConfig() {
-        return atmEngineConfig;
-    }
-    public void setAtmEngineConfig(AtmEngineConfig atmEngineConfig) {
-        this.atmEngineConfig = atmEngineConfig;
-    }
-
     @Override
     /**
-     * This method is used to initialise the ATM Engine after startup of the ATM Engine application.
+     * This method is used to initialise the ATM Engine on startup of the ATM Engine application.
+     *
+     * TODO : This Initialisation (account user and currency information) information needs to
+     * come from a persistent data source and not hard coded as below.
      *
      * @return AtmEngineConfig - The config object loaded for the ATM Engine
      */
@@ -88,6 +84,9 @@ public class AtmEngineServiceImpl implements AtmEngineService{
 
         calculateAndSetCurrentAtmEngineAmount();
 
+        /**
+         * TODO : Identify any failure reasons for the ATM config
+         */
         return getAtmEngineConfig();
     }
 
@@ -138,19 +137,19 @@ public class AtmEngineServiceImpl implements AtmEngineService{
         if (AtmEngineError.REQUEST_SUCCESS.getErrorCode() == atmEngineResponse.getResponseCode()){
 
             /**
-             * Attempt the withdrawal
+             * Attempt the withdrawal.
              *
              * get the account balance and populate the response
              */
             AtmEngineUserAccount atmEngineUserAccount = findAccount(atmEngineRequest.getAccountNo(), atmEngineRequest.getAccountPin());
             atmEngineResponse.setBalance(atmEngineUserAccount.getBalance());
             /**
-             * Check if the ATM has funds to cover the withdrawal amount
+             * Check if the ATM has funds to cover the withdrawal amount for this user
              */
             if (getAtmEngineConfig().getAtmMachineCurrentBalance() >= atmEngineRequest.getWithdrawalAmount()){
                 /**
-                 * Check the user has enough funds
-                 * Check for a negative balance first.
+                 * Check for a starting negative user balance then Check the user has enough funds for this withdrawal.
+                 *
                  */
                 int userBalance = 0;
                 if (atmEngineUserAccount.getBalance() > 0){
@@ -159,7 +158,7 @@ public class AtmEngineServiceImpl implements AtmEngineService{
                 if ((userBalance+atmEngineUserAccount.getOverdraft()) >= atmEngineRequest.getWithdrawalAmount()){
 
                     /**
-                     * Find if the denominations and number of notes for the withdrawal
+                     * Find if the denominations and number of notes for the withdrawal exist in the ATM reserves
                      */
                     WithdrawalCurrency withdrawalCurrency = findCurrencyMatch(atmEngineRequest);
                     /**
@@ -168,31 +167,37 @@ public class AtmEngineServiceImpl implements AtmEngineService{
                      */
                     if (withdrawalCurrency != null){
                         /**
-                         * TODO : We should only make the withdrawal from the ATM once we know we can do so safely, but at the moment
-                         * it's done in the findCurrencyMatch method automatically.
-                         */
-
-                        /**
-                         * Make the withdrawal from the user account, both the balance and the overdraft
+                         * Make the withdrawal from the user account, both the balance and the overdraft if required
                          */
                         int newBalance = atmEngineUserAccount.getBalance()-atmEngineRequest.getWithdrawalAmount();
                         atmEngineUserAccount.setBalance(newBalance);
-                        if (newBalance < 0) {
-                            atmEngineUserAccount.setOverdraft((atmEngineUserAccount.getOverdraft() - atmEngineRequest.getWithdrawalAmount()));
+
+                        // now deal with updating the user overdraft
+                        if(newBalance<0){
+                            int newOverDraft = newBalance-(atmEngineUserAccount.getBalance());
+                            atmEngineUserAccount.setOverdraft(newOverDraft);
                         }
                         /**
-                         * set the balance in the response
+                         * Now make the withdrawal from the ATM machine cash reserves, based on the dominations identified for the withdrawal.
                          */
-                        atmEngineResponse.setBalance(atmEngineUserAccount.getBalance());
+                        if(recalculateAtmMachineCashReserves(withdrawalCurrency)){
 
-                        /**
-                         * set the withdrawal details for the Currency notes in the response
-                         */
-                        atmEngineResponse.setWithdrawalCurrency(withdrawalCurrency);
+                            /**
+                             * set the balance in the response
+                             */
+                            atmEngineResponse.setBalance(atmEngineUserAccount.getBalance());
+
+                            /**
+                             * set the withdrawal details for the Currency notes in the response
+                             */
+                            atmEngineResponse.setWithdrawalCurrency(withdrawalCurrency);
+                        } else {
+                            atmEngineResponse.setResponseCode(AtmEngineError.ATM_FUNDS_ERR.getErrorCode());
+                            atmEngineResponse.setResponseMessage(AtmEngineError.ATM_FUNDS_ERR.getResponseDescription());
+                        }
                     } else {
-                        /**
-                         * TODO : Handle the error case of not having the notes in the ATM to handle the request.
-                         */
+                        atmEngineResponse.setResponseCode(AtmEngineError.ATM_FUNDS_ERR.getErrorCode());
+                        atmEngineResponse.setResponseMessage(AtmEngineError.ATM_FUNDS_ERR.getResponseDescription());
                     }
 
                     /**
@@ -204,8 +209,8 @@ public class AtmEngineServiceImpl implements AtmEngineService{
                     atmEngineResponse.setResponseMessage(AtmEngineError.ACCOUNT_FUNDS_ERR.getResponseDescription());
                 }
             } else {
-                atmEngineResponse.setResponseCode(AtmEngineError.ATM_AMOUNT_ERR.getErrorCode());
-                atmEngineResponse.setResponseMessage(AtmEngineError.ATM_AMOUNT_ERR.getResponseDescription());
+                atmEngineResponse.setResponseCode(AtmEngineError.ATM_FUNDS_ERR.getErrorCode());
+                atmEngineResponse.setResponseMessage(AtmEngineError.ATM_FUNDS_ERR.getResponseDescription());
             }
         }
         return atmEngineResponse;
@@ -232,18 +237,18 @@ public class AtmEngineServiceImpl implements AtmEngineService{
         if (atmEngineRequest.getWithdrawalAmount() < 0 ){
             atmEngineResponse.setResponseCode(AtmEngineError.WITHDRAWAL_AMOUNT_ERR.getErrorCode());
             atmEngineResponse.setResponseMessage(AtmEngineError.WITHDRAWAL_AMOUNT_ERR.getResponseDescription());
-        } else if (atmEngineRequest.getAccountNo() == null &&
+        } else if (atmEngineRequest.getAccountNo() == null ||
                 atmEngineRequest.getAccountNo() == "" ){
             atmEngineResponse.setResponseCode(AtmEngineError.ACCOUNT_LOGIN_ERR.getErrorCode());
             atmEngineResponse.setResponseMessage(AtmEngineError.ACCOUNT_LOGIN_ERR.getResponseDescription());
-        } else if (atmEngineRequest.getAccountPin() == null &&
+        } else if (atmEngineRequest.getAccountPin() == null ||
                 atmEngineRequest.getAccountPin() == "") {
             atmEngineResponse.setResponseCode(AtmEngineError.ACCOUNT_LOGIN_ERR.getErrorCode());
             atmEngineResponse.setResponseMessage(AtmEngineError.ACCOUNT_LOGIN_ERR.getResponseDescription());
         } else if (!accountNumberIsKnown(atmEngineRequest.getAccountNo())){
             atmEngineResponse.setResponseCode(AtmEngineError.ACCOUNT_NUMBER_ERR.getErrorCode());
             atmEngineResponse.setResponseMessage(AtmEngineError.ACCOUNT_NUMBER_ERR.getResponseDescription());
-        }  else if (!accountPinMatches(atmEngineRequest.getAccountNo(),atmEngineRequest.getAccountPin())){
+        }  else if (findAccount(atmEngineRequest.getAccountNo(),atmEngineRequest.getAccountPin()) == null){
             atmEngineResponse.setResponseCode(AtmEngineError.ACCOUNT_PIN_ERR.getErrorCode());
             atmEngineResponse.setResponseMessage(AtmEngineError.ACCOUNT_PIN_ERR.getResponseDescription());
         } else if ((atmEngineRequest.getWithdrawalAmount() %5) >0 ) {
@@ -271,24 +276,6 @@ public class AtmEngineServiceImpl implements AtmEngineService{
 
     /**
      * This method is used to check if the user account number and user account pin matches
-     * the information held in the ATM.
-     *
-     * @param String - accountNumber
-     * @param String - accountPin
-     * @return boolean - true if the user and pin matches
-     */
-    private boolean accountPinMatches(String accountNumber, String accountPin){
-        for (AtmEngineUserAccount atmEngineUserAcount: getAtmEngineConfig().getAtmEngineUserAccounts()){
-            if (atmEngineUserAcount.getAccountNo().equalsIgnoreCase(accountNumber) &&
-                    atmEngineUserAcount.getAccountPin().equalsIgnoreCase(accountPin)){
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * This method is used to check if the user account number and user account pin matches
      * the information held in the ATM and return the user account object.
      *
      * @param String - accountNumber
@@ -306,7 +293,8 @@ public class AtmEngineServiceImpl implements AtmEngineService{
     }
 
     /**
-     * This method is used to calculate the current total amount now held in the ATM.
+     * This method is used to calculate the current total cash amount now held in the ATM as well as
+     * calculating the amount held in the ATM per currency demonination.
      *
      * @return int - The total amount now held in the ATM
      */
@@ -315,6 +303,7 @@ public class AtmEngineServiceImpl implements AtmEngineService{
 
         for (Map.Entry<Integer, AtmEngineCurrency> entry : getAtmEngineConfig().getAtmEngineCurrencyNotes().entrySet()) {
             AtmEngineCurrency demoninationDetail = entry.getValue();
+            demoninationDetail.recalculateCurrentAmount();
             atmEngineCurrentAmount += demoninationDetail.getCurrentAmount();
         }
         getAtmEngineConfig().setAtmMachineCurrentBalance(atmEngineCurrentAmount);
@@ -324,7 +313,7 @@ public class AtmEngineServiceImpl implements AtmEngineService{
     /**
      * This method is used to determine if a withdrawal can be made from the ATM.
      *
-     * This method will calculate the denomination and amounts of notes required to satisfy the withdrawal.
+     * This method will calculate the denomination and amounts of notes required to satisfy the user withdrawal.
      *
      * @param AtmEngineRequest - details of the withdrawal request.
      * @return WithdrawalCurrency - The details of the withdrawal, null is withdrawal cannot be made.
@@ -341,40 +330,53 @@ public class AtmEngineServiceImpl implements AtmEngineService{
         int amountToWithdraw = atmEngineRequest.getWithdrawalAmount();
         while(amountToWithdraw > 0 && iter.hasNext()){
             int denomination = iter.next();
-            AtmEngineCurrency atmEngineCurrency = getAtmEngineConfig().getAtmEngineCurrencyNotes().get(denomination);
+            AtmEngineCurrency atmEngineCurrency = atmEngineConfig.getAtmEngineCurrencyNotes().get(denomination);
+            AtmEngineCurrency atmEngineCurrencyClone = null;
+            try{
+                /**
+                 * Make a copy of the ATM reserves cash details as we only want to make changes to it once we
+                 * know the withdrawal can be make successfully.
+                 */
+                atmEngineCurrencyClone =  (AtmEngineCurrency)atmEngineCurrency.clone();
+                boolean addedDenominationNotes = false;
+                if (atmEngineCurrencyClone.getCurrentAmount() > 0){
+                    AtmEngineCurrency atmEngineCurrencyToStore = new AtmEngineCurrency(denomination, 0);
+                    int numberOfNotesInDenomination = atmEngineCurrencyClone.getCurrentNumberOfNotes();
+                    for(int i =0; i<numberOfNotesInDenomination && amountToWithdraw > 0;i++){
+                        if (amountToWithdraw >= denomination) {
 
-            boolean addedDenominationNotes = false;
-            if (atmEngineCurrency.getCurrentAmount() > 0){
-                AtmEngineCurrency atmEngineCurrencyToStore = new AtmEngineCurrency(denomination, 0);
-                int numberOfNotesInDenomination = atmEngineCurrency.getCurrentNumberOfNotes();
-                for(int i =0; i<numberOfNotesInDenomination && amountToWithdraw > 0;i++){
-                    if (amountToWithdraw >= denomination) {
+                            /**
+                             * we only want to send notes we take as part of the withdrawal in the REST response
+                             */
+                            addedDenominationNotes = true;
+                            amountToWithdraw = amountToWithdraw-denomination;
+                            /**
+                             * TODO :: The withdrawal can still fail so we should not change the ATM values here until we are sure
+                             * the withdrawal can be successful.
+                             */
+                            atmEngineCurrencyClone.setCurrentNumberOfNotes((atmEngineCurrencyClone.getCurrentNumberOfNotes()-1));
+                            /**
+                             * increment the number of notes for this denomination
+                             */
+                            atmEngineCurrencyToStore.setCurrentNumberOfNotes((atmEngineCurrencyToStore.getCurrentNumberOfNotes()+1));
 
-                        /**
-                         * we only want to send notes we take as part of the withdrawal in the REST response
-                         */
-                        addedDenominationNotes = true;
-                        amountToWithdraw = amountToWithdraw-denomination;
-                        /**
-                         * TODO :: The withdrawal can still fail so we should not change the ATM values here until we are sure
-                         * the withdrawal can be successfull.
-                         */
-                        atmEngineCurrency.setCurrentNumberOfNotes((atmEngineCurrency.getCurrentNumberOfNotes()-1));
-                        /**
-                         * increment the number of notes for this denomination
-                         */
-                        atmEngineCurrencyToStore.setCurrentNumberOfNotes((atmEngineCurrencyToStore.getCurrentNumberOfNotes()+1));
-
-                        /**
-                         * Recalculate the amount associated with the denomination after changing the of notes
-                         */
-                        atmEngineCurrencyToStore.recalculateCurrentAmount();
-                        atmEngineCurrency.recalculateCurrentAmount();
+                            /**
+                             * Recalculate the amount associated with the denomination after changing the of notes
+                             */
+                            atmEngineCurrencyToStore.recalculateCurrentAmount();
+                            atmEngineCurrencyClone.recalculateCurrentAmount();
+                        }
+                    }
+                    if (addedDenominationNotes){
+                        withdrawalCurrency.getAtmEngineCurrencies().add(atmEngineCurrencyToStore);
                     }
                 }
-                if (addedDenominationNotes){
-                    withdrawalCurrency.getAtmEngineCurrencies().add(atmEngineCurrencyToStore);
-                }
+
+            } catch(CloneNotSupportedException exception){
+                /**
+                 * We failed to copy a currency object so force an error response from this method.
+                 */
+                amountToWithdraw = -1;
             }
         }
 
@@ -385,6 +387,40 @@ public class AtmEngineServiceImpl implements AtmEngineService{
             withdrawalCurrency =null;
         }
         return withdrawalCurrency;
+    }
+
+    /**
+     * This method is used to make the correct deductions to the cash reserves held in the
+     * ATM Machine after a user withdrawal.
+     *
+     * This method will make the correct changes to each denomination for the user withdrawal.
+     *
+     * @param WithdrawalCurrency - the details of the user withdrawal.
+     * @return boolean - true if successful in changes ATM Machine reserves.
+     */
+    private boolean recalculateAtmMachineCashReserves(WithdrawalCurrency withdrawalCurrency){
+        boolean madeSuccessfulAtmMachineWithdrawal =true;
+
+        /**
+         * Loop through all the demoninations in the user cash withdrawal and make the deductions from the ATM reserves for that demonination.
+         */
+        for (int i =0; i<withdrawalCurrency.getAtmEngineCurrencies().size() && madeSuccessfulAtmMachineWithdrawal;i++){
+            AtmEngineCurrency atmEngineCurrency = withdrawalCurrency.getAtmEngineCurrencies().get(i);
+            AtmEngineCurrency atmEngineCurrencyToChange = getAtmEngineConfig().getAtmEngineCurrencyNotes().get(atmEngineCurrency.getDemonination());
+            if (atmEngineCurrencyToChange != null){
+                atmEngineCurrencyToChange.setCurrentNumberOfNotes((atmEngineCurrencyToChange.getCurrentNumberOfNotes()-atmEngineCurrency.getCurrentNumberOfNotes()));
+            } else {
+                madeSuccessfulAtmMachineWithdrawal = false;
+            }
+        }
+        return madeSuccessfulAtmMachineWithdrawal;
+    }
+
+    public AtmEngineConfig getAtmEngineConfig() {
+        return atmEngineConfig;
+    }
+    public void setAtmEngineConfig(AtmEngineConfig atmEngineConfig) {
+        this.atmEngineConfig = atmEngineConfig;
     }
 
 }

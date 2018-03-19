@@ -11,7 +11,7 @@ import com.jjProj.atmEngine.common.AtmEngineRequestType;
 /**
  * Class used to model the HTTP REST requests that the ATM engine handles.
  *
- * This class holds a superset of all possible request parameters for all REST requests.
+ * This class handles a superset of all possible request parameters for the REST requests entering the ATM engine.
  *
  */
 public class AtmEngineRequest {

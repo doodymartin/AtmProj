@@ -25,6 +25,9 @@ import com.jjProj.atmEngine.service.impl.AtmEngineServiceImpl;
 @ComponentScan("com.jjProj")
 public class AtmEngineController {
 
+    /**
+     * Wire in the Service layer bean
+     */
     @Resource(name="atmEngineServiceImpl")
     private AtmEngineServiceImpl atmEngineService;
 
